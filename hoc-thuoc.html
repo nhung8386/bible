@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Master - Học Thuộc Lòng Thông Minh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .word-hidden {
+            background-color: #e0e7ff;
+            color: transparent;
+            border-bottom: 2px solid #818cf8;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        .word-hidden:hover {
+            background-color: #c7d2fe;
+        }
+        .word-visible {
+            background-color: transparent;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700 flex items-center justify-center gap-2">
+                <i data-lucide="book-open" class="w-8 h-8"></i>
+                Memory Master
+            </h1>
+            <p class="text-slate-600 mt-2">Công cụ hỗ trợ học thuộc lòng bằng phương pháp ẩn từ ngẫu nhiên</p>
+        </header>
+
+        <!-- Input Mode UI -->
+        <div id="input-mode" class="bg-white rounded-2xl shadow-xl p-6 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <label class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                    <i data-lucide="type" class="w-5 h-5 text-indigo-500"></i>
+                    Nhập đoạn văn của bạn
+                </label>
+                <button onclick="clearText()" class="text-slate-400 hover:text-red-500 transition-colors" title="Xóa tất cả">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <textarea id="text-input" 
+                class="w-full h-64 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-lg leading-relaxed text-slate-800"
+                placeholder="Dán hoặc nhập nội dung bạn muốn học thuộc lòng vào đây..."></textarea>
+            <div class="mt-6 flex justify-end">
+                <button onclick="startStudy()" id="start-btn"
+                    class="bg-indigo-600 hover:bg-indigo-700 transform hover:-translate-y-1 px-8 py-3 rounded-full font-bold text-white shadow-lg flex items-center gap-2 transition-all">
+                    Bắt đầu học <i data-lucide="eye" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Study Mode UI (Hidden by default) -->
+        <div id="study-mode" class="hidden bg-white rounded-2xl shadow-xl p-6 transition-all">
+            <!-- Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-medium text-slate-700 flex items-center gap-2">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            Độ khó (Ẩn <span id="difficulty-val">30</span>%)
+                        </label>
+                    </div>
+                    <input type="range" id="difficulty-range" min="0" max="100" value="30" 
+                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                </div>
+                <div class="flex items-center justify-end gap-3">
+                    <button onclick="reShuffle()" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Đổi vị trí
+                    </button>
+                    <button onclick="stopStudy()" class="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
+                        <i data-lucide="eye-off" class="w-4 h-4"></i> Chỉnh sửa text
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Display -->
+            <div class="p-4 md:p-6 border-l-4 border-indigo-200 bg-white min-h-[300px]">
+                <div id="display-area" class="text-xl md:text-2xl leading-[2.5rem] text-slate-800 break-words whitespace-pre-wrap">
+                    <!-- Words will be injected here -->
+                </div>
+            </div>
+
+            <div class="mt-8 text-center text-sm text-slate-400 italic">
+                * Mẹo: Nhấp vào một ô trống để hiện từ, nhấp vào từ để ẩn lại.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Khởi tạo icons
+        lucide.createIcons();
+
+        let currentText = "";
+        let difficulty = 30;
+        let seed = Math.random();
+
+        const inputMode = document.getElementById('input-mode');
+        const studyMode = document.getElementById('study-mode');
+        const textInput = document.getElementById('text-input');
+        const displayArea = document.getElementById('display-area');
+        const diffRange = document.getElementById('difficulty-range');
+        const diffVal = document.getElementById('difficulty-val');
+
+        function clearText() {
+            textInput.value = "";
+        }
+
+        function startStudy() {
+            currentText = textInput.value.trim();
+            if (!currentText) return;
+            
+            inputMode.classList.add('hidden');
+            studyMode.classList.remove('hidden');
+            renderText();
+        }
+
+        function stopStudy() {
+            studyMode.classList.add('hidden');
+            inputMode.classList.remove('hidden');
+        }
+
+        function reShuffle() {
+            seed = Math.random();
+            renderText();
+        }
+
+        diffRange.addEventListener('input', (e) => {
+            difficulty = e.target.value;
+            diffVal.innerText = difficulty;
+            renderText();
+        });
+
+        function renderText() {
+            displayArea.innerHTML = "";
+            // Tách từ giữ nguyên khoảng trắng
+            const wordsArray = currentText.split(/(\s+)/);
+            
+            wordsArray.forEach((word, index) => {
+                const isActualWord = /\w+/.test(word);
+                const span = document.createElement('span');
+                span.innerText = word;
+
+                if (isActualWord) {
+                    // Thuật toán giả ngẫu nhiên dựa trên seed để cố định vị trí ẩn khi render lại
+                    const randomVal = Math.abs((Math.sin(index + seed) * 10000) % 100);
+                    const initiallyHidden = randomVal < difficulty;
+
+                    span.className = "inline-block px-1 mx-0.5 rounded cursor-pointer transition-all duration-300 " + 
+                                   (initiallyHidden ? "word-hidden" : "word-visible");
+                    
+                    span.onclick = () => {
+                        if (span.classList.contains('word-hidden')) {
+                            span.classList.remove('word-hidden');
+                            span.classList.add('word-visible');
+                        } else {
+                            span.classList.add('word-hidden');
+                            span.classList.remove('word-visible');
+                        }
+                    };
+                } else {
+                    span.className = "";
+                }
+                
+                displayArea.appendChild(span);
+            });
+        }
+    </script>
+</body>
+</html>
