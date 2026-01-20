@@ -76,6 +76,9 @@
             "5": "Hai loại Thần và Con người(1)",
             "6": "Hai loại Thần và Con người(2)",
             "7": "Hai loại Thần và Con người(3)",
+            "8": "Mục đích học Kinh Thánh",
+            "9": "Kiến thức cơ bản của Kinh Thánh",
+            "10": "Đấng Tạo Hoá giao ước với dân được chọn(B10-B13)",
             "100": "Tổng kết dự án"
         };
 
@@ -95,7 +98,7 @@
 
             for (let i = 1; i <= max; i++) {
                 const fileName = `${prefix}${i}.html`;
-                const customTitle = customTitles[i.toString()] || `Bài tập số ${i}`;
+                const customTitle = customTitles[i.toString()] || `Bài số ${i}`;
                 
                 // Lọc tìm kiếm
                 if (customTitle.toLowerCase().includes(search) || fileName.toLowerCase().includes(search)) {
